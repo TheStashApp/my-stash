@@ -3814,13 +3814,14 @@ async function fetchSynopsis(coll){
       body: JSON.stringify({model:"claude-sonnet-4-20250514", max_tokens:200, messages:[{role:"user",content:prompt}]})
     });
     const data = await r.json();
+    if(data.error) { notify('API error: ' + data.error.message, true); return; }
     const text = data.content.map(c=>c.text||'').join('').trim();
     const existing = val(notesId);
     const notesEl = document.getElementById(notesId);
     if(notesEl) notesEl.value = existing ? text+'\n\n'+existing : text;
     notify('Info added ✓');
   } catch(e){
-    notify('Could not fetch info', true);
+    notify('Could not fetch: ' + e.message, true);
   }
 
   btn.disabled = false;
