@@ -2394,7 +2394,7 @@ async function saveApiKey() {
         'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 10,
         messages: [{role:'user', content:'Hi'}]
       })
@@ -3737,7 +3737,7 @@ For price include the $ sign. Example: {"title":"The Matrix","year":"1999","genr
   try {
     const r = await fetch("https://api.anthropic.com/v1/messages",{
       method:"POST", headers:apiHeaders(),
-      body: JSON.stringify({model:"claude-sonnet-4-20250514", max_tokens:300, messages:[{role:"user",content:prompt}]})
+      body: JSON.stringify({model:"claude-sonnet-4-6", max_tokens:300, messages:[{role:"user",content:prompt}]})
     });
     const data = await r.json();
     const txt = data.content.map(c=>c.text||'').join('').trim();
@@ -3811,7 +3811,7 @@ async function fetchSynopsis(coll){
   try {
     const r = await fetch("https://api.anthropic.com/v1/messages",{
       method:"POST", headers:apiHeaders(),
-      body: JSON.stringify({model:"claude-sonnet-4-20250514", max_tokens:200, messages:[{role:"user",content:prompt}]})
+      body: JSON.stringify({model:"claude-sonnet-4-6", max_tokens:200, messages:[{role:"user",content:prompt}]})
     });
     const data = await r.json();
     const text = data.content.map(c=>c.text||'').join('').trim();
@@ -3987,7 +3987,7 @@ async function doLookup(coll){
   const [ebayData, aiResult] = await Promise.allSettled([
     getEbaySoldPrices(searchTerm),
     fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:apiHeaders(),
-      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:350,messages:[{role:"user",content:prompt}]})})
+      body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:350,messages:[{role:"user",content:prompt}]})})
       .then(r=>r.json())
       .then(data=>{
         const txt=data.content.map(c=>c.text||'').join('').trim();
@@ -4027,9 +4027,14 @@ async function doLookup(coll){
       html += `<div class="pr-hd" style="margin-top:${ebay?'8px':'0'};">🤖 AI Dealer Estimate</div>
         <div><b>Buy:</b> ${ai.dealer_buy} &nbsp;|&nbsp; <b>Sell:</b> ${ai.dealer_sell} &nbsp;|&nbsp; <b>Avg:</b> ${ai.market_avg}</div>
         <div style="color:var(--muted);margin-top:4px;font-size:10px;">💡 ${ai.notes||''}</div>`;
-      // Auto-fill dealer ask with AI sell price (if no eBay data already filled it)
       if (!ebay) setVal(mfx[coll][0], ai.market_avg);
       setVal(mfx[coll][1], ai.dealer_sell);
+    } else if (ebay) {
+      // AI failed but eBay worked — calculate dealer ask from eBay median
+      const dealerAsk = (parseFloat(ebay.median) * 1.3).toFixed(2);
+      setVal(mfx[coll][1], '$'+dealerAsk);
+      html += `<div class="pr-hd" style="margin-top:8px;color:var(--muted);">🤖 AI Estimate Unavailable</div>
+        <div style="font-size:11px;color:var(--muted);">Dealer Ask set to 130% of eBay median. Adjust as needed.</div>`;
     }
 
     pr.innerHTML = html;
@@ -4304,7 +4309,7 @@ No explanation, just the JSON.`;
 
   try{
     const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:apiHeaders(),
-      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:400,messages:[{role:"user",content:prompt}]})});
+      body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:400,messages:[{role:"user",content:prompt}]})});
     const data=await r.json();
     const txt=data.content.map(c=>c.text||'').join('').trim();
     const json=JSON.parse(txt.replace(/```json|```/g,'').trim());
@@ -4810,7 +4815,7 @@ Also include "type_value": the fixed type ID to use for ALL rows if the entire s
   try {
     const r = await fetch("https://api.anthropic.com/v1/messages", {
       method:"POST", headers:apiHeaders(),
-      body: JSON.stringify({model:"claude-sonnet-4-20250514", max_tokens:400, messages:[{role:"user",content:prompt}]})
+      body: JSON.stringify({model:"claude-sonnet-4-6", max_tokens:400, messages:[{role:"user",content:prompt}]})
     });
     const data = await r.json();
     const txt  = data.content.map(c=>c.text||'').join('').trim();
