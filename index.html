@@ -2336,7 +2336,7 @@ let inv = JSON.parse(localStorage.getItem('theStashMobile')||'[]');
 let sold = JSON.parse(localStorage.getItem('theStashMobileSold')||'[]');
 
 // ── API KEY MANAGEMENT ──
-const HARDCODED_KEY = 'sk-ant-api03-c_6OE_WiOd3uNAbiUzoUGGexEX58iOjM4GwPZnmJ1JSP53hcy9luFODbK_b-ujTNRqHzdpbaInM1bNe3VGdsMg-JSYgPgAA'; let apiKey = HARDCODED_KEY; localStorage.setItem('theStashApiKey', HARDCODED_KEY);
+let apiKey = localStorage.getItem('theStashApiKey') || '';
 
 function apiHeaders() {
   return {
@@ -2394,7 +2394,7 @@ async function saveApiKey() {
         'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 10,
         messages: [{role:'user', content:'Hi'}]
       })
@@ -3737,7 +3737,7 @@ For price include the $ sign. Example: {"title":"The Matrix","year":"1999","genr
   try {
     const r = await fetch("https://api.anthropic.com/v1/messages",{
       method:"POST", headers:apiHeaders(),
-      body: JSON.stringify({model:"claude-sonnet-4-6", max_tokens:300, messages:[{role:"user",content:prompt}]})
+      body: JSON.stringify({model:"claude-sonnet-4-20250514", max_tokens:300, messages:[{role:"user",content:prompt}]})
     });
     const data = await r.json();
     const txt = data.content.map(c=>c.text||'').join('').trim();
@@ -3814,14 +3814,13 @@ async function fetchSynopsis(coll){
       body: JSON.stringify({model:"claude-sonnet-4-20250514", max_tokens:200, messages:[{role:"user",content:prompt}]})
     });
     const data = await r.json();
-    if(data.error) { notify('API error: ' + data.error.message, true); return; }
     const text = data.content.map(c=>c.text||'').join('').trim();
     const existing = val(notesId);
     const notesEl = document.getElementById(notesId);
     if(notesEl) notesEl.value = existing ? text+'\n\n'+existing : text;
     notify('Info added ✓');
   } catch(e){
-    notify('Could not fetch: ' + e.message, true);
+    notify('Could not fetch info', true);
   }
 
   btn.disabled = false;
@@ -3962,6 +3961,31 @@ async function getEbaySoldPrices(searchTerm) {
   } catch(e) { return null; }
 }
 
+async function getEbaySoldPrices(searchTerm) {
+  try {
+    const token = await getEbayToken();
+    if (!token) return null;
+    const query = encodeURIComponent(searchTerm);
+    const r = await fetch(
+      `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${query}&filter=buyingOptions:{FIXED_PRICE},conditions:{USED}&sort=endingSoonest&limit=10`,
+      { headers: { 'Authorization': 'Bearer ' + token, 'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US' } }
+    );
+    const data = await r.json();
+    if (!data.itemSummaries || data.itemSummaries.length === 0) return null;
+    const prices = data.itemSummaries
+      .filter(i => i.price?.value)
+      .map(i => parseFloat(i.price.value))
+      .filter(p => p > 0);
+    if (prices.length === 0) return null;
+    prices.sort((a,b) => a - b);
+    const avg = prices.reduce((s,p) => s+p, 0) / prices.length;
+    const low = prices[0];
+    const high = prices[prices.length - 1];
+    const mid = prices[Math.floor(prices.length / 2)];
+    return { avg: avg.toFixed(2), low: low.toFixed(2), high: high.toFixed(2), median: mid.toFixed(2), count: prices.length };
+  } catch(e) { return null; }
+}
+
 async function doLookup(coll){
   if(busy['l'+coll]) return;
   let prompt='', searchTerm='';
@@ -3988,7 +4012,7 @@ async function doLookup(coll){
   const [ebayData, aiResult] = await Promise.allSettled([
     getEbaySoldPrices(searchTerm),
     fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:apiHeaders(),
-      body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:350,messages:[{role:"user",content:prompt}]})})
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:350,messages:[{role:"user",content:prompt}]})})
       .then(r=>r.json())
       .then(data=>{
         const txt=data.content.map(c=>c.text||'').join('').trim();
@@ -4028,14 +4052,9 @@ async function doLookup(coll){
       html += `<div class="pr-hd" style="margin-top:${ebay?'8px':'0'};">🤖 AI Dealer Estimate</div>
         <div><b>Buy:</b> ${ai.dealer_buy} &nbsp;|&nbsp; <b>Sell:</b> ${ai.dealer_sell} &nbsp;|&nbsp; <b>Avg:</b> ${ai.market_avg}</div>
         <div style="color:var(--muted);margin-top:4px;font-size:10px;">💡 ${ai.notes||''}</div>`;
+      // Auto-fill dealer ask with AI sell price (if no eBay data already filled it)
       if (!ebay) setVal(mfx[coll][0], ai.market_avg);
       setVal(mfx[coll][1], ai.dealer_sell);
-    } else if (ebay) {
-      // AI failed but eBay worked — calculate dealer ask from eBay median
-      const dealerAsk = (parseFloat(ebay.median) * 1.3).toFixed(2);
-      setVal(mfx[coll][1], '$'+dealerAsk);
-      html += `<div class="pr-hd" style="margin-top:8px;color:var(--muted);">🤖 AI Estimate Unavailable</div>
-        <div style="font-size:11px;color:var(--muted);">Dealer Ask set to 130% of eBay median. Adjust as needed.</div>`;
     }
 
     pr.innerHTML = html;
@@ -4310,7 +4329,7 @@ No explanation, just the JSON.`;
 
   try{
     const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:apiHeaders(),
-      body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:400,messages:[{role:"user",content:prompt}]})});
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:400,messages:[{role:"user",content:prompt}]})});
     const data=await r.json();
     const txt=data.content.map(c=>c.text||'').join('').trim();
     const json=JSON.parse(txt.replace(/```json|```/g,'').trim());
@@ -4816,7 +4835,7 @@ Also include "type_value": the fixed type ID to use for ALL rows if the entire s
   try {
     const r = await fetch("https://api.anthropic.com/v1/messages", {
       method:"POST", headers:apiHeaders(),
-      body: JSON.stringify({model:"claude-sonnet-4-6", max_tokens:400, messages:[{role:"user",content:prompt}]})
+      body: JSON.stringify({model:"claude-sonnet-4-20250514", max_tokens:400, messages:[{role:"user",content:prompt}]})
     });
     const data = await r.json();
     const txt  = data.content.map(c=>c.text||'').join('').trim();
@@ -5092,8 +5111,7 @@ renderList();
 updateStats();
 rebuildDynamicUI();
 
-// Persist hardcoded key to localStorage silently
-localStorage.setItem('theStashApiKey', apiKey);
+
 
 // Check if backup reminder is due
 checkBackupReminder();
