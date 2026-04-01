@@ -4010,7 +4010,7 @@ async function doLookup(coll){
 
   // Run eBay and AI lookups in parallel
   const [ebayData, aiResult] = await Promise.allSettled([
-    getEbaySoldPrices(searchTerm),
+    getEbayPrices(searchTerm),
     fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:apiHeaders(),
       body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:350,messages:[{role:"user",content:prompt}]})})
       .then(r=>r.json())
