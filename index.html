@@ -4009,6 +4009,7 @@ async function doLookup(coll){
   const mfx={DVD:['d-market','d-dealer'],COMIC:['c-market','c-dealer'],TOY:['t-market','t-dealer'],CD:['cd-market','cd-dealer'],VINYL:['v-market','v-dealer'],CASS:['ca-market','ca-dealer'],CARD:['card-market','card-dealer'],GAME:['game-market','game-dealer'],GENERIC:['generic-market','generic-dealer']};
 
   // Run eBay and AI lookups in parallel
+  alert('dolookup reached');
   const [ebayData, aiResult] = await Promise.allSettled([
     getEbayPrices(searchTerm),
     fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:apiHeaders(),
