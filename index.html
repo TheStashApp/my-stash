@@ -2394,7 +2394,7 @@ async function saveApiKey() {
         'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({
-       model: 'claude-haiku-4-5-20251001',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 10,
         messages: [{role:'user', content:'Hi'}]
       })
@@ -4009,16 +4009,17 @@ async function doLookup(coll){
   const mfx={DVD:['d-market','d-dealer'],COMIC:['c-market','c-dealer'],TOY:['t-market','t-dealer'],CD:['cd-market','cd-dealer'],VINYL:['v-market','v-dealer'],CASS:['ca-market','ca-dealer'],CARD:['card-market','card-dealer'],GAME:['game-market','game-dealer'],GENERIC:['generic-market','generic-dealer']};
 
   // Run eBay and AI lookups in parallel
-  try }
   const [ebayData, aiResult] = await Promise.allSettled([
-   getEbayPrices(searchTerm),
-    fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:apiHeaders(),body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:350,messages:[{role:"user",content:prompt}]})})
-    .then(r=>r.json())
-    .then(data=>{
-      const txt=data.content.map(c=>c.text||'').join('').trim();
-      return JSON.parse(txt.replace(/```json|```/g,'').trim());
-    })
-]);
+    getEbayPrices(searchTerm),
+    fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:apiHeaders(),
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:350,messages:[{role:"user",content:prompt}]})})
+      .then(r=>r.json())
+      .then(data=>{
+        const txt=data.content.map(c=>c.text||'').join('').trim();
+        return JSON.parse(txt.replace(/```json|```/g,'').trim());
+      })
+  ]);
+
   const ebay = ebayData.status === 'fulfilled' ? ebayData.value : null;
   const ai   = aiResult.status  === 'fulfilled' ? aiResult.value  : null;
 
@@ -4067,14 +4068,7 @@ async function doLookup(coll){
   busy['l'+coll]=false; btn.disabled=false;
   document.getElementById('pli-'+coll).textContent='🔍';
   document.getElementById('plt-'+coll).textContent='Look Up Dealer Price';
-
-  } catch(e) {
-  busy['l'+coll]=false; btn.disabled=false;
-  document.getElementById('pli-'+coll).textContent='🔍';
-  document.getElementById('plt-'+coll).textContent='Look Up Dealer Price';
-  pr.innerHTML='<div class="pr-hd" style="color:var(--accent)">Lookup error</div>';
-  pr.classList.add('vis');
-}}
+}
 
 // ── BARCODE LOOKUP ──
 const BC_FILL = {
@@ -5118,7 +5112,7 @@ updateStats();
 rebuildDynamicUI();
   
 
-showApiSetup(false);
+
 // Check if backup reminder is due
 checkBackupReminder();
 </script>
