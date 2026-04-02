@@ -4012,7 +4012,7 @@ async function doLookup(coll){
   const [ebayData, aiResult] = await Promise.allSettled([
     getEbayPrices(searchTerm),
     fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:apiHeaders(),
-      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:350,messages:[{role:"user",content:prompt}]})})
+      body:JSON.stringify({model:"claude-sonnet-4-5",max_tokens:350,messages:[{role:"user",content:prompt}]})})
       .then(r=>r.json())
       .then(data=>{
         const txt=data.content.map(c=>c.text||'').join('').trim();
