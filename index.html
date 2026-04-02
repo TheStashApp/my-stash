@@ -4010,14 +4010,14 @@ async function doLookup(coll){
 
   // Run eBay and AI lookups in parallel
   const [ebayData, aiResult] = await Promise.allSettled([
-    Promise.race([getEbayPrices(searchTerm), new Promise(r=>setTimeout(()=>r(null),8000))]),
-    Promise.race([
-  fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:apiHeaders(),body:JSON.stringify({model:"claude-sonnet-4-5",max_tokens:350,messages:[{role:"user",content:prompt}]})})
-  .then(r=>r.json())
-  .then(data=>{const txt=data.content.map(c=>c.text||'').join('').trim();return JSON.parse(txt.replace(/```json|```/g,'').trim());}),
-  new Promise(r=>setTimeout(()=>r(null),8000))
-])
-
+   getEbayPrices(searchTerm),
+    fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:apiHeaders(),body:JSON.stringify({model:"claude-sonnet-4-5",max_tokens:350,messages:[{role:"user",content:prompt}]})})
+    .then(r=>r.json())
+    .then(data=>{
+      const txt=data.content.map(c=>c.text||'').join('').trim();
+      return JSON.parse(txt.replace(/```json|```/g,'').trim());
+    })
+]);
   const ebay = ebayData.status === 'fulfilled' ? ebayData.value : null;
   const ai   = aiResult.status  === 'fulfilled' ? aiResult.value  : null;
 
