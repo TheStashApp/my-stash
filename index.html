@@ -2385,7 +2385,7 @@ async function saveApiKey() {
   errEl.style.display = 'none';
 
   try {
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
+    const r = await fetch('/.netlify/functions/claude', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -3735,7 +3735,7 @@ For condition use one of: M, NM, VG, G, F (or "" if not mentioned).
 For price include the $ sign. Example: {"title":"The Matrix","year":"1999","genre":"Sci-Fi","format":"DVD","condition":"VG","price":"$5","artist":"","label":""}`;
 
   try {
-    const r = await fetch("https://api.anthropic.com/v1/messages",{
+    const r = await fetch("/.netlify/functions/claude",{
       method:"POST", headers:apiHeaders(),
       body: JSON.stringify({model:"claude-sonnet-4-20250514", max_tokens:300, messages:[{role:"user",content:prompt}]})
     });
@@ -3809,7 +3809,7 @@ async function fetchSynopsis(coll){
   lbl.textContent = 'Fetching…';
 
   try {
-    const r = await fetch("https://api.anthropic.com/v1/messages",{
+    const r = await fetch("/.netlify/functions/claude",{
       method:"POST", headers:apiHeaders(),
       body: JSON.stringify({model:"claude-sonnet-4-20250514", max_tokens:200, messages:[{role:"user",content:prompt}]})
     });
@@ -3989,7 +3989,7 @@ async function doLookup(coll){
   
   const [ebayData, aiResult] = await Promise.allSettled([
     getEbaySoldPrices(searchTerm),
-    fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:apiHeaders(),
+    fetch("/.netlify/functions/claude",{method:"POST",headers:apiHeaders(),
       body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:350,messages:[{role:"user",content:prompt}]})})
       .then(r=>r.json())
       .then(data=>{
@@ -4306,7 +4306,7 @@ Or if you cannot identify it with confidence: {"found":false}
 No explanation, just the JSON.`;
 
   try{
-    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:apiHeaders(),
+    const r=await fetch("/.netlify/functions/claude",{method:"POST",headers:apiHeaders(),
       body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:400,messages:[{role:"user",content:prompt}]})});
     const data=await r.json();
     const txt=data.content.map(c=>c.text||'').join('').trim();
@@ -4811,7 +4811,7 @@ Also include "type_value": the fixed type ID to use for ALL rows if the entire s
 
   let mapping;
   try {
-    const r = await fetch("https://api.anthropic.com/v1/messages", {
+    const r = await fetch("/.netlify/functions/claude", {
       method:"POST", headers:apiHeaders(),
       body: JSON.stringify({model:"claude-sonnet-4-20250514", max_tokens:400, messages:[{role:"user",content:prompt}]})
     });
