@@ -4020,7 +4020,7 @@ async function doLookup(coll){
         return JSON.parse(txt.replace(/```json|```/g,'').trim());
       })
   ]);
-
+alert('promise settled');
   const ebay = ebayData.status === 'fulfilled' ? ebayData.value : null;
   const ai   = aiResult.status  === 'fulfilled' ? aiResult.value  : null;
 
