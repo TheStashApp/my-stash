@@ -3961,30 +3961,7 @@ async function getEbaySoldPrices(searchTerm) {
   } catch(e) { return null; }
 }
 
-async function getEbaySoldPrices(searchTerm) {
-  try {
-    const token = await getEbayToken();
-    if (!token) return null;
-    const query = encodeURIComponent(searchTerm);
-    const r = await fetch(
-      `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${query}&filter=buyingOptions:{FIXED_PRICE},conditions:{USED}&sort=endingSoonest&limit=10`,
-      { headers: { 'Authorization': 'Bearer ' + token, 'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US' } }
-    );
-    const data = await r.json();
-    if (!data.itemSummaries || data.itemSummaries.length === 0) return null;
-    const prices = data.itemSummaries
-      .filter(i => i.price?.value)
-      .map(i => parseFloat(i.price.value))
-      .filter(p => p > 0);
-    if (prices.length === 0) return null;
-    prices.sort((a,b) => a - b);
-    const avg = prices.reduce((s,p) => s+p, 0) / prices.length;
-    const low = prices[0];
-    const high = prices[prices.length - 1];
-    const mid = prices[Math.floor(prices.length / 2)];
-    return { avg: avg.toFixed(2), low: low.toFixed(2), high: high.toFixed(2), median: mid.toFixed(2), count: prices.length };
-  } catch(e) { return null; }
-}
+
 
 async function doLookup(coll){
   if(busy['l'+coll]) return;
